@@ -1319,13 +1319,20 @@ class TaraApi extends Controller
     {
         if (session_status() !== PHP_SESSION_ACTIVE) self::startSession();
         $userId = filter_var($_SESSION['tara_user_id'] ?? null, FILTER_VALIDATE_INT);
+        // Release PHP's session lock before database work so other requests
+        // from the same browser can proceed while this user lookup runs.
+        session_write_close();
         if (!$userId) {
             if ($required) self::respond(['error' => 'Please sign in to continue.'], 401);
             return null;
         }
         $user = self::findUserById((int) $userId);
         if (!$user) {
-            unset($_SESSION['tara_user_id']);
+            self::startSession();
+            if ((int) ($_SESSION['tara_user_id'] ?? 0) === (int) $userId) {
+                unset($_SESSION['tara_user_id']);
+            }
+            session_write_close();
             if ($required) self::respond(['error' => 'Your account is no longer available. Please sign in again.'], 401);
             return null;
         }
