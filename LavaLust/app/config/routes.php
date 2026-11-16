@@ -71,6 +71,7 @@ $router->post('/api/listings/update-job', 'TaraApi::updateJobListing');
 $router->post('/api/listings/close-job', 'TaraApi::closeJobListing');
 $router->post('/api/listings/close-training', 'TaraApi::closeTrainingListing');
 $router->post('/api/listings/moderate', 'TaraApi::moderateListing');
+$router->post('/api/listings/dispatch-alerts', 'TaraApi::dispatchListingAlerts');
 $router->get('/api/push-key', 'TaraApi::pushKey');
 $router->post('/api/push-subscriptions', 'TaraApi::savePushSubscription');
 $router->post('/api/push-subscriptions/remove', 'TaraApi::removePushSubscription');

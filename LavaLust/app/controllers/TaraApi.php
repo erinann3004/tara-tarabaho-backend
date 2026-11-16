@@ -1124,22 +1124,51 @@ class TaraApi extends Controller
                 throw $exception;
             }
 
-            $delivery = ['in_app' => count($students), 'email' => 0, 'push' => 0];
-            if ($status === 'published' && $students) {
-                $title = $kind === 'training' ? 'New training program' : 'New job opportunity';
-                $listingTitle = $kind === 'training' ? $listing['program_name'] : $listing['job_title'];
-                $details = $listingTitle . ' is now available in ' . $listing['location'] . '.';
-                $url = ($kind === 'training' ? '/training' : '/jobs') . '?listing_id=' . (int) $listingId;
-                $delivery['email'] = self::emailUsers(array_column($students, 'id'), $title, $details, $url);
-                $delivery['push'] = self::pushUsers(
-                    array_column($students, 'id'),
-                    'listing-' . $kind . '-' . (int) $listingId,
-                    $title,
-                    $details,
-                    $url
-                );
+            self::respond([
+                'success' => true,
+                'status' => $status,
+                'delivery' => ['in_app' => count($students), 'email' => 0, 'push' => 0],
+                'alerts_pending' => $status === 'published' && (bool) $students,
+            ]);
+        });
+    }
+
+    public function dispatchListingAlerts()
+    {
+        self::run(function () {
+            self::verifyOrigin();
+            self::requireRole(['admin']);
+            $input = self::input();
+            $listingId = filter_var($input['listing_id'] ?? null, FILTER_VALIDATE_INT);
+            $kind = self::stringValue($input['kind'] ?? '');
+            if (!$listingId || !in_array($kind, ['job', 'training'], true)) {
+                self::respond(['error' => 'Choose a valid published listing.'], 422);
             }
-            self::respond(['success' => true, 'status' => $status, 'delivery' => $delivery]);
+
+            $listing = $this->call->model('Listing_model')->getById((int) $listingId, $kind, 'published');
+            if (!$listing) {
+                self::respond(['error' => 'Published listing not found.'], 404);
+            }
+
+            $students = $this->call->model('Account_model')->getJobSeekers();
+            $studentIds = array_column($students, 'id');
+            if (!$studentIds) {
+                self::respond(['success' => true, 'delivery' => ['email' => 0, 'push' => 0]]);
+            }
+
+            $title = $kind === 'training' ? 'New training program' : 'New job opportunity';
+            $details = $listing['title'] . ' is now available in ' . $listing['location'] . '.';
+            $url = ($kind === 'training' ? '/training' : '/jobs') . '?listing_id=' . (int) $listingId;
+            $emailCount = self::emailUsers($studentIds, $title, $details, $url);
+            $pushCount = self::pushUsers(
+                $studentIds,
+                'listing-' . $kind . '-' . (int) $listingId,
+                $title,
+                $details,
+                $url
+            );
+
+            self::respond(['success' => true, 'delivery' => ['email' => $emailCount, 'push' => $pushCount]]);
         });
     }
 
