@@ -1571,6 +1571,61 @@ class TaraApi extends Controller
     private static function emailUsers(array $userIds, string $subject, string $message, string $url): int
     {
         if (!$userIds) return 0;
+        $resendApiKey = self::env('RESEND_API_KEY');
+        if ($resendApiKey !== '') {
+            if (!function_exists('curl_init')) {
+                error_log('[TARA-TRABAHO notifications] Email delivery failed: PHP cURL is unavailable.');
+                return 0;
+            }
+            $from = self::env('MAIL_FROM');
+            if ($from === '' || str_contains($from, 'example.com')) {
+                error_log('[TARA-TRABAHO notifications] Email delivery skipped: set MAIL_FROM to a verified sender address.');
+                return 0;
+            }
+            $recipients = array_values(array_unique(array_filter(
+                lava_instance()->call->model('Account_model')->getAlertEmails($userIds),
+                static fn($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)
+            )));
+            if (!$recipients) return 0;
+
+            $siteUrl = rtrim(self::env('APP_URL') ?: 'http://localhost/backend/backend/LavaLust', '/');
+            $html = '<p>' . htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p><p><a href="' . htmlspecialchars($siteUrl . $url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">View on TARA-TRABAHO</a></p>';
+            $sender = (self::env('MAIL_FROM_NAME') ?: 'TARA-TRABAHO') . ' <' . $from . '>';
+            $emails = array_map(static fn($recipient) => [
+                'from' => $sender,
+                'to' => [$recipient],
+                'subject' => $subject,
+                'html' => $html,
+                'text' => $message . ' ' . $siteUrl . $url,
+            ], $recipients);
+            $sent = 0;
+            foreach (array_chunk($emails, 100) as $batch) {
+                $curl = curl_init('https://api.resend.com/emails/batch');
+                curl_setopt_array($curl, [
+                    CURLOPT_POST => true,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CONNECTTIMEOUT => 5,
+                    CURLOPT_TIMEOUT => 20,
+                    CURLOPT_HTTPHEADER => [
+                        'Authorization: Bearer ' . $resendApiKey,
+                        'Content-Type: application/json',
+                    ],
+                    CURLOPT_POSTFIELDS => json_encode($batch, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                ]);
+                $response = curl_exec($curl);
+                $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($curl);
+                curl_close($curl);
+                $body = is_string($response) ? json_decode($response, true) : null;
+                if ($status >= 200 && $status < 300 && is_array($body['data'] ?? null)) {
+                    $sent += count($body['data']);
+                } else {
+                    error_log('[TARA-TRABAHO notifications] Resend delivery failed (HTTP ' . $status . ')' . ($curlError !== '' ? ': ' . $curlError : '.'));
+                }
+            }
+            return $sent;
+        }
+
         $host = self::env('MAIL_HOST');
         if (!$host) {
             error_log('[TARA-TRABAHO notifications] Email delivery skipped: MAIL_HOST is not configured.');
