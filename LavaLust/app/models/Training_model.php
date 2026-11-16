@@ -118,7 +118,7 @@ class Training_model extends Model
         $query = $this->db->table('TrainingPrograms')
             ->select('TrainingPrograms.program_id AS id, TrainingPrograms.program_name AS title,
                        TrainingProviders.institution_name AS organization, TrainingPrograms.location, TrainingPrograms.category,
-                       TrainingPrograms.starts, TrainingPrograms.ends, TrainingPrograms.duration, TrainingPrograms.slots_available AS slots,
+                       TrainingPrograms.starts, TrainingPrograms.ends, TrainingPrograms.duration, TrainingPrograms.schedule, TrainingPrograms.slots_available AS slots,
                        TrainingPrograms.description, TrainingPrograms.skills_covered AS skills, TrainingPrograms.status,
                        TrainingProviders.user_id AS owner_id')
             ->inner_join('TrainingProviders', 'TrainingProviders.provider_id = TrainingPrograms.provider_id')
