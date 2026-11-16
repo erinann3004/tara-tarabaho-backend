@@ -259,10 +259,11 @@ $config['lock_duration_creation']  = 120;
 $config['security_file']           = ROOT_DIR . 'runtime/session/session_security.json';
 $config['sess_inactivity_timeout'] = 1800;
 $config['session_hmac_secret']     = $config_env('APP_KEY');
-$allowed_api_origins = array_values(array_filter(array_map(
+$api_allowed_origins = $config_env('API_ALLOWED_ORIGINS') ?: 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174';
+$allowed_api_origins = array_values(array_unique(array_filter(array_map(
     'trim',
-    explode(',', $config_env('API_ALLOWED_ORIGINS') ?: 'https://tara-tarabaho-frontend.onrender.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174')
-)));
+    explode(',', $api_allowed_origins . ',https://tara-tarabaho-frontend.onrender.com')
+))));
 $config['security_headers'] = [
     'cors' => [
         'allowed_origins' => $allowed_api_origins,

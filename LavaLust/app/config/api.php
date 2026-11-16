@@ -145,7 +145,8 @@ $config['users_table'] = 'Users';
 | a browser, so set your real domain in production.
 |
 */
-$allowedOrigins = getenv('API_ALLOWED_ORIGINS') ?: 'https://tara-tarabaho-frontend.onrender.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175';
+$allowedOrigins = getenv('API_ALLOWED_ORIGINS') ?: 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175';
+$allowedOrigins .= ',https://tara-tarabaho-frontend.onrender.com';
 $config['allow_origin'] = array_values(array_filter(array_map('trim', explode(',', $allowedOrigins))));
 
 /*
