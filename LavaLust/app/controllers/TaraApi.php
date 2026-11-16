@@ -1582,10 +1582,20 @@ class TaraApi extends Controller
                 error_log('[TARA-TRABAHO notifications] Email delivery skipped: set MAIL_FROM to a verified sender address.');
                 return 0;
             }
-            $recipients = array_values(array_unique(array_filter(
-                lava_instance()->call->model('Account_model')->getAlertEmails($userIds),
-                static fn($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)
-            )));
+            if (strtolower($from) === 'onboarding@resend.dev') {
+                // Resend's shared test sender only delivers to the Resend account owner's address.
+                $testRecipient = self::env('RESEND_TEST_RECIPIENT');
+                if (!filter_var($testRecipient, FILTER_VALIDATE_EMAIL)) {
+                    error_log('[TARA-TRABAHO notifications] Email delivery skipped: set RESEND_TEST_RECIPIENT to the email associated with the Resend account.');
+                    return 0;
+                }
+                $recipients = [$testRecipient];
+            } else {
+                $recipients = array_values(array_unique(array_filter(
+                    lava_instance()->call->model('Account_model')->getAlertEmails($userIds),
+                    static fn($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)
+                )));
+            }
             if (!$recipients) return 0;
 
             $siteUrl = rtrim(self::env('APP_URL') ?: 'http://localhost/backend/backend/LavaLust', '/');
