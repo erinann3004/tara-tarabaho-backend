@@ -1,0 +1,15 @@
+.git
+**/.git
+.env
+.env.*
+!**/.env.example
+**/.env
+**/.env.*
+!**/.env.example
+LavaLust/vendor/
+**/node_modules/
+LavaLust/runtime/cache/
+LavaLust/runtime/logs/
+LavaLust/storage/private-resumes/
+database/
+*.log
