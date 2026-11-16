@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+.git
+vendor/
+node_modules/
+runtime/cache/
+runtime/logs/
+storage/private-resumes/

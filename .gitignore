@@ -1,1 +1,13 @@
-database/
+/database/
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/vendor/
+**/node_modules/
+**/runtime/cache/
+**/runtime/logs/
+**/storage/private-resumes/
+*.log

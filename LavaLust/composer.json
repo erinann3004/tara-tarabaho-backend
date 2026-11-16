@@ -1,0 +1,11 @@
+{
+  "name": "tara-trabaho/platform",
+  "description": "Notification delivery dependencies for TARA-TRABAHO",
+  "license": "MIT",
+  "type": "project",
+  "require": {
+    "php": ">=8.0",
+    "minishlink/web-push": "^8.0",
+    "phpmailer/phpmailer": "^6.9"
+  }
+}
